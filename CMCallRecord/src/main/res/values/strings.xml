@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">CM Call Record</string>
+    <string name="module_description">Call recording module on CyanogenMod 11/12/12.1</string>
+</resources>
