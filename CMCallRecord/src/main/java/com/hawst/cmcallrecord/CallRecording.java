@@ -64,9 +64,11 @@ public class CallRecording implements IXposedHookLoadPackage, IXposedHookInitPac
 						@Override
 						protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
 							Object dcTracker = param.thisObject;
-							Field mAllApnSettings = findField(dcTracker.getClass(), "mAllApnSettings");
-							if (mAllApnSettings.get(dcTracker) == null) {
-								mAllApnSettings.set(dcTracker, new ArrayList());
+							Field mAllApnSettings = findField(dcTracker.getClass().getSuperclass(), "mAllApnSettings");
+							if (mAllApnSettings != null) {
+								if (mAllApnSettings.get(dcTracker) == null) {
+									mAllApnSettings.set(dcTracker, new ArrayList());
+								}
 							}
 						}
 					});*/
@@ -74,11 +76,12 @@ public class CallRecording implements IXposedHookLoadPackage, IXposedHookInitPac
 			findAndHookMethod(CLASS_SERVICE_STATE, lpparam.classLoader,
 					FUNC_SET_RIL_DATA_RADIO_TECH, Integer.class, new XC_MethodHook() {
 						@Override
-						protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-							if (param.args != null && param.args.length > 0) {
-								int type = (int)param.args[0];
+						protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+							Field mRilDataRadioTechnology = findField(param.thisObject.getClass(), "mRilDataRadioTechnology");
+							if (mRilDataRadioTechnology != null) {
+								int type = (int)mRilDataRadioTechnology.get(param.thisObject);
 								if (type == 102)
-									param.args[0] = 2;
+									mRilDataRadioTechnology.set(param.thisObject, 2);
 							}
 						}
 					});
