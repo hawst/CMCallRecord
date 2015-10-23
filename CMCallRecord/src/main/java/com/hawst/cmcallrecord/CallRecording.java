@@ -17,6 +17,7 @@ import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
+import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
@@ -73,24 +74,39 @@ public class CallRecording implements IXposedHookLoadPackage, IXposedHookInitPac
 						}
 					});*/
 
-			findAndHookMethod(CLASS_SERVICE_STATE, lpparam.classLoader,
-					FUNC_SET_RIL_DATA_RADIO_TECH, Integer.class, new XC_MethodHook() {
-						@Override
-						protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-							Field mRilDataRadioTechnology = findField(param.thisObject.getClass(), "mRilDataRadioTechnology");
-							if (mRilDataRadioTechnology != null) {
-								int type = (int)mRilDataRadioTechnology.get(param.thisObject);
-								if (type == 102)
-									mRilDataRadioTechnology.set(param.thisObject, 2);
+			try {
+				findAndHookMethod(CLASS_SERVICE_STATE, lpparam.classLoader,
+						FUNC_SET_RIL_DATA_RADIO_TECH, int.class, new XC_MethodHook() {
+							@Override
+							protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+								XposedBridge.log("this: " + param.thisObject);
+								Field mRilDataRadioTechnology = param.thisObject.getClass().getField("mRilDataRadioTechnology");
+								XposedBridge.log("mRilDataRadioTechnology: " + mRilDataRadioTechnology);
+								if (mRilDataRadioTechnology != null) {
+									int type = (int) mRilDataRadioTechnology.get(param.thisObject);
+									XposedBridge.log("mRilDataRadioTechnology.Value: " + type);
+									if (type == 102) {
+										mRilDataRadioTechnology.set(param.thisObject, 2);
+										XposedBridge.log("mRilDataRadioTechnology.Value = 2");
+									}
+								}
 							}
-						}
-					});
+						});
+				XposedBridge.log("FOUND '" + CLASS_SERVICE_STATE + "#" + FUNC_SET_RIL_DATA_RADIO_TECH + "' in package - '" + lpparam.packageName + "' !!!");
+			}
+			catch (NoSuchMethodError e) {
+				XposedBridge.log("Package '" + lpparam.packageName + "' - has no '" + CLASS_SERVICE_STATE + "#" + FUNC_SET_RIL_DATA_RADIO_TECH + "'.");
+			}
 		}
 		if (PACKAGE_DIALER.equals(lpparam.packageName)) {
-
-			findAndHookMethod(CLASS_CALL_RECORDER_SERVICE, lpparam.classLoader,
-					FUNC_IS_ENABLED, Context.class,
-					XC_MethodReplacement.returnConstant(true));
+			try {
+				findAndHookMethod(CLASS_CALL_RECORDER_SERVICE, lpparam.classLoader,
+						FUNC_IS_ENABLED, Context.class,
+						XC_MethodReplacement.returnConstant(true));
+			}
+			catch (NoSuchMethodError e) {
+				XposedBridge.log("Package '" + lpparam.packageName + "' - has no '" + CLASS_CALL_RECORDER_SERVICE + "#" + FUNC_IS_ENABLED + "'.");
+			}
 		}
 	}
 
